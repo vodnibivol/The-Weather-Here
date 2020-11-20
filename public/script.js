@@ -1,17 +1,10 @@
 const submitBtn = document.getElementById('submitBtn');
-const locateBtn = document.getElementById('locateBtn');
 
 let location_map;
-let lat, lon, weather, air_quality;
 
-// submitBtn.addEventListener('click', submit);
-// locateBtn.addEventListener('click', geolocate);
+submitBtn.addEventListener('click', geolocate);
 
-geolocate();
-
-async function submit() {
-  let data = { lat, lon, weather, air_quality };
-
+async function addEntryToDatabase(data) {
   const options = {
     method: 'POST',
     body: JSON.stringify(data),
@@ -20,7 +13,7 @@ async function submit() {
     },
   };
 
-  let response = await fetch('/api', options);
+  let response = await fetch('/api/add', options);
   let file = await response.json();
 
   console.log('submitted data. response:');
@@ -36,7 +29,7 @@ async function submit() {
   tiles.addTo(location_map);
 })();
 
-function placeMarker(lat, lon) {
+function placeMarker(lat, lon, desc = false) {
   const icon = L.icon({
     iconUrl: 'camera.png',
     iconSize: [40, 40],
@@ -44,6 +37,12 @@ function placeMarker(lat, lon) {
 
   const marker = L.marker([lat, lon]);
   marker.addTo(location_map);
+
+  location_map.setView([lat, lon], 15);
+
+  if (desc) {
+    marker.bindPopup(desc);
+  }
 }
 
 async function getWeather(lat, lon) {
@@ -54,46 +53,28 @@ async function getWeather(lat, lon) {
 }
 
 function showWeather(data) {
-  const locationSpan = document.getElementById('location');
-  const summarySpan = document.getElementById('summary');
-  const tempSpan = document.getElementById('temperature');
+  // console.log(data);
 
-  const parameterSpan = document.getElementById('aq_parameter');
-  const valueSpan = document.getElementById('aq_value');
-  const unitSpan = document.getElementById('aq_unit');
+  let { lat, lon } = data.coord;
 
-  console.log(data);
+  let loc = data.name;
+  let country = data.sys.country;
+  let summ = data.weather[0].description;
+  let temp_k = data.main.temp;
 
-  weather = data.weather;
-  air_quality = data.air_quality;
-
-  let loc = weather.name;
-  let country = weather.sys.country;
-  let summ = weather.weather[0].description;
-  let temp_k = weather.main.temp;
   let temp = (temp_k - 273.15).toFixed(2);
 
-  try {
-    locationSpan.innerText = `${loc}, ${country}`;
-    summarySpan.innerText = summ;
-    tempSpan.innerText = temp;
+  let txt = `The weather here at ${loc}, ${country} is ${summ} with a temperature of ${temp} &deg;C.`;
+  placeMarker(lat, lon, txt);
 
-    let measurements = air_quality.results[0].measurements[0];
-    let param = measurements.parameter;
-    let value = measurements.value;
-    let unit = measurements.unit;
+  let dict = {
+    lat: lat,
+    lon: lon,
+    loc: loc,
+    msg: txt,
+  };
 
-    parameterSpan.innerText = param;
-    valueSpan.innerText = value;
-    unitSpan.innerText = unit;
-  } catch (err) {
-    console.log('measurement not found.');
-    
-    parameterSpan.innerText = "unknown particle";
-    valueSpan.innerText = "unknown";
-  }
-
-  submit();
+  addEntryToDatabase(dict);
 }
 
 function geolocate() {
@@ -106,19 +87,11 @@ function geolocate() {
   function success(pos) {
     var crd = pos.coords;
 
-    // console.log('Your current position is:');
-    // console.log(`Latitude : ${crd.latitude}`);
-    // console.log(`Longitude: ${crd.longitude}`);
-    // console.log(`More or less ${crd.accuracy} meters.`);
+    let lat = crd.latitude;
+    let lon = crd.longitude;
 
-    lat = crd.latitude;
-    lon = crd.longitude;
-
-    placeMarker(lat, lon);
-    location_map.setView([lat, lon], 15);
-
-    // locateBtn.disabled = true;
-    // submitBtn.disabled = false;
+    // placeMarker(lat, lon);
+    // location_map.setView([lat, lon], 15);
 
     getWeather(lat, lon);
   }

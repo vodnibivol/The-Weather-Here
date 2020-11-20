@@ -17,6 +17,26 @@ function placeMarker(lat, lon, desc = false) {
   }
 }
 
+async function removeEntryFromDatabase(index = 0) {
+  let dict = { index: index };
+
+  const options = {
+    method: 'POST',
+    body: JSON.stringify(dict),
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  };
+
+  console.log(dict);
+
+  let response = await fetch('/api/remove', options);
+  let file = await response.json();
+
+  console.log('submitted data. response:');
+  console.log(file);
+}
+
 async function getData() {
   const response = await fetch('/api');
   const data = await response.json();
@@ -28,38 +48,54 @@ async function showData() {
   data = await getData();
 
   let entryContainer = document.createElement('div');
+  entryContainer.classList.add('entry-container');
+
+  let i = 1;
 
   data.forEach((entry) => {
     // console.log(entry);
 
-    let { lat, lon, weather, air_quality } = entry;
+    let { lat, lon, loc, msg } = entry;
 
-    let loc = weather.name;
-    let country = weather.sys.country;
-    let summ = weather.weather[0].description;
-    let temp_k = weather.main.temp;
-    let temp = (temp_k - 273.15).toFixed(2);
+    /* -------- create elements --------- */
 
-    let txt = `The weather here at ${loc}, ${country} is ${summ} with a temperature of ${temp} &deg;C.`;
+    let sectionDiv = document.createElement('div');
+    let locPara = document.createElement('p');
+    let deleteBtn = document.createElement('img');
+    let hr = document.createElement('hr');
 
-    // let dateString = new Date(timestamp).toDateString();
+    locPara.innerText = `${i} : ${loc}`;
+    deleteBtn.setAttribute('src', '../delete.svg');
 
-    // let locPara = document.createElement('p');
-    // let anchor = document.createElement('a');
-    // let datePara = document.createElement('p');
+    sectionDiv.appendChild(locPara);
+    sectionDiv.appendChild(deleteBtn);
 
-    // locPara.innerText = `location :\n${lat}\n${lon}\n`;
-    // anchor.innerText = 'show';
-    // anchor.setAttribute('href', '#');
-    // datePara.innerText = dateString;
+    entryContainer.appendChild(sectionDiv);
+    entryContainer.appendChild(hr);
 
-    // locPara.append(anchor);
-    // entryContainer.append(locPara);
+    /* ------- add event listeners ------- */
 
-    placeMarker(lat, lon, txt);
+    deleteBtn.addEventListener('click', (e) => {
+      let target = e.target;
+      let parentDiv = target.parentNode;
+      let hr = parentDiv.nextSibling;
+
+      let gParent = parentDiv.parentNode;
+
+      let index = Array.from(gParent.children).indexOf(parentDiv) / 2;
+
+      gParent.removeChild(parentDiv);
+      gParent.removeChild(hr);
+
+      removeEntryFromDatabase(index);
+    });
+
+    placeMarker(lat, lon, msg);
+
+    i++;
   });
 
-  dataContainer.append(entryContainer);
+  dataContainer.appendChild(entryContainer);
 }
 
 showData();

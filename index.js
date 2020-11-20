@@ -1,5 +1,6 @@
 const express = require('express');
 const Datastore = require('nedb');
+const fs = require('fs');
 const fetch = require('node-fetch');
 require('dotenv').config();
 
@@ -10,19 +11,12 @@ app.listen(PORT, () => console.log(`listening at port ${PORT}`));
 app.use(express.static('public'));
 app.use(express.json({ limit: '1mb' }));
 
-const database = new Datastore('database.db');
-database.loadDatabase();
-
 app.get('/api', (request, response) => {
   console.log('got a GET request');
-  database.find({}, (err, data) => {
-    if (err) {
-      console.log(err);
-      response.end();
-      return;
-    }
-    response.json(data);
-  });
+  let data = fs.readFileSync('places.json');
+  let json = JSON.parse(data);
+
+  response.json(json);
 });
 
 app.get('/weather/:latlon', async (request, response) => {
@@ -38,25 +32,66 @@ app.get('/weather/:latlon', async (request, response) => {
   let weather_response = await fetch(weather_url);
   let weather_data = await weather_response.json();
 
-  let aq_url = `https://api.openaq.org/v1/latest?coordinates=${lat},${lon}`;
-  let aq_response = await fetch(aq_url);
-  let aq_data = await aq_response.json();
-
-  let data = {
-    weather: weather_data,
-    air_quality: aq_data,
-  };
-
-  response.json(data);
+  response.json(weather_data);
 });
 
-app.post('/api', (request, response) => {
+app.post('/api/:action', (request, response) => {
   console.log('got a POST request');
 
-  const data = request.body;
-  const timestamp = Date.now();
-  data.timestamp = timestamp;
+  let action = request.params.action;
+  const filename = 'places.json';
 
-  database.insert(data);
-  response.json(data);
+  switch (action) {
+    case 'add':
+      console.log('adding to database');
+
+      const data = request.body;
+
+      console.log(data);
+
+      const timestamp = Date.now();
+      data.timestamp = timestamp;
+
+      if (fs.existsSync(filename)) {
+        let file = fs.readFileSync(filename);
+        let json = JSON.parse(file);
+
+        console.log(json);
+
+        json.push(data);
+
+        let dataString = JSON.stringify(json);
+        fs.writeFileSync('places.json', dataString);
+      } else {
+        let arr = [];
+        arr.push(data);
+
+        console.log('arr:');
+        console.log(arr);
+
+        let dataString = JSON.stringify(arr);
+
+        console.log('datastring:');
+        console.log(dataString);
+        fs.writeFileSync(filename, dataString);
+      }
+
+      response.json("added to database.");
+      break;
+    case 'remove':
+      console.log('removing from database');
+
+      const index = request.body.index;
+
+      let file = fs.readFileSync(filename);
+      let json = JSON.parse(file);
+
+      json.splice(index, 1);
+
+      let dataString = JSON.stringify(json);
+      fs.writeFileSync('places.json', dataString);
+
+      response.json("removed from database: index " + index);
+      break;
+  }
 });
