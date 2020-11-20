@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- leaflet requirements -->
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+      integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
+      crossorigin=""
+    />
+    <script
+      src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
+      integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
+      crossorigin=""
+    ></script>
+
+    <link rel="stylesheet" href="style.css" />
+
+    <title>Document</title>
+  </head>
+  <body>
+    <div class="content">
+      <a href="/checkins">checkins</a>
+      <div class="container-btn">
+        <!-- <button id="locateBtn">locate me</button>
+        <br />
+        <button id="submitBtn" disabled>submit geodata</button>
+        <br /> -->
+        <p class="forecast" id="forecast">
+          The weather in <span id="location"></span> is <span id="summary"></span> with a temperature of
+          <span id="temperature"></span> &deg;C. The concentration of particulate matter (<span id="aq_parameter"></span>)
+          is <span id="aq_value"></span> <span id="aq_unit"></span>.
+        </p>
+      </div>
+      <div id="locMap"></div>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
